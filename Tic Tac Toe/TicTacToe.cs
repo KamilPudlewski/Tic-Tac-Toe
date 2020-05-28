@@ -1,320 +1,233 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
-using System.Drawing;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
-using System.Threading;
 using System.Threading.Tasks;
-using System.Windows.Forms;
 
 namespace Tic_Tac_Toe
 {
-    public partial class TicTacToe : Form
+    public class TicTacToe
     {
-        private SettingsManager settings = new SettingsManager();
+        public enum PlayerType { Human, Randomly, MiniMax, AlphaBeta }
 
-        private static GameBoard gameBoard = new GameBoard();
+        private GameBoard gameBoard;
         private IPlayer player1;
         private IPlayer player2;
 
+        private Tuple<int, int> lastMove;
+
+        private int winnerID;
+        private string winnerMark;
         private bool gameOverStatus = false;
         private List<Tuple<int, int>> winnerPositions = new List<Tuple<int, int>>();
-        private int timeBetweenComputerMoves = 200;
-        
+
         public TicTacToe()
         {
-            InitializeComponent();
-            LoadPlayersSettings();
-            ComputerMove();
+
         }
 
-        private void LoadPlayersSettings()
+        public void SetGameBoard(int rows, int columns, int winingSeriesCount)
         {
-            SetPlayerType(ref player1, settings.GetPlayer1(), 1, 'X');
-            SetPlayerType(ref player2, settings.GetPlayer2(), 2, 'O');
+            gameBoard = new GameBoard(rows, columns, winingSeriesCount);
         }
 
-        private void SetPlayerType(ref IPlayer player, int playerType, int playerNumber, char playerMark)
+        public GameBoard GetGameBoard()
+        {
+            return gameBoard;
+        }
+
+        public void SetPlayer1(PlayerType playerType)
+        {
+            SetPlayerType(ref player1, playerType, 1, 'X');
+        }
+
+        public IPlayer GetPlayer1()
+        {
+            return player1;
+        }
+
+        public void SetPlayer2(PlayerType playerType)
+        {
+            SetPlayerType(ref player2, playerType, 2, 'O');
+        }
+
+        public IPlayer GetPlayer2()
+        {
+            return player2;
+        }
+
+        public IPlayer GetActualPlayer()
+        {
+            if (gameBoard.IsPlayer1Turn())
+            {
+                return player1;
+            }
+            else
+            {
+                return player2;
+            }
+        }
+
+        public IPlayer GetNextPlayer()
+        {
+            if (gameBoard.IsPlayer1Turn())
+            {
+                return player2;
+            }
+            else
+            {
+                return player1;
+            }
+        }
+
+        private void SetPlayerType(ref IPlayer player, PlayerType playerType, int playerNumber, char playerMark)
         {
             switch (playerType)
             {
-                case 0:
+                case PlayerType.Human:
                     player = new Human(playerNumber, playerMark);
                     break;
-                case 1:
+                case PlayerType.Randomly:
                     player = new Randomly(gameBoard, playerNumber, playerMark);
                     break;
-                case 2:
+                case PlayerType.MiniMax:
                     player = new MiniMax(gameBoard, playerNumber, playerMark);
                     break;
-                case 3:
+                case PlayerType.AlphaBeta:
                     player = new AlphaBeta(gameBoard, playerNumber, playerMark);
                     break;
             }
         }
 
-        private void newGameToolStripMenuItem_Click(object sender, EventArgs e)
+        public void ResetGame()
         {
-            ResetButtons();
-            LoadPlayersSettings();
-            gameOverStatus = false;
             gameBoard.Reset();
-
-            while (!CheckButtonResetStatus())
-            {
-                Thread.Sleep(100);
-            }
-
-            ComputerMove();
+            winnerID = 0;
+            winnerMark = "";
+            gameOverStatus = false;
+            winnerPositions.Clear();
+            lastMove = null;
         }
 
-        private void settingsToolStripMenuItem_Click(object sender, EventArgs e)
+        public bool IsHumanPlayerMove()
         {
-            PlayersSettings enemySettings = new PlayersSettings(settings);
-            enemySettings.Show();
-        }
-
-        private void button_Click(object sender, EventArgs e)
-        {
-            if(gameBoard.IsPlayer1Turn())
+            if (gameBoard.IsPlayer1Turn())
             {
                 if (player1.GetType().Equals(typeof(Human)))
-                {
-                    Tuple<int, int> move = GetButtonBoardPosition(sender);
-                    gameBoard.Move(move.Item1, move.Item2, player1.ID);
-                    UpdateButton(move.Item1, move.Item2, player1.Mark);
-                }
+                    return true;
                 else
-                {
-                    Tuple<int, int> move = player1.NextMove();
-                    UpdateButton(move.Item1, move.Item2, player1.Mark);
-                }
+                    return false;
             }
             else
             {
                 if (player2.GetType().Equals(typeof(Human)))
-                {
-                    Tuple<int, int> move = GetButtonBoardPosition(sender);
-                    gameBoard.Move(move.Item1, move.Item2, player2.ID);
-                    UpdateButton(move.Item1, move.Item2, player2.Mark);
-                }
+                    return true;
                 else
-                {
-                    Tuple<int, int> move = player2.NextMove();
-                    UpdateButton(move.Item1, move.Item2, player2.Mark);
-                }
-            }
-
-            CheckForWinner();
-            ComputerMove();
-        }
-
-        void ComputerMove()
-        {
-            while (IsComputerTurn() && !gameOverStatus)
-            {
-                Thread.Sleep(timeBetweenComputerMoves);
-                if (gameBoard.IsPlayer1Turn())
-                {
-                    Tuple<int, int> move = player1.NextMove();
-                    UpdateButton(move.Item1, move.Item2, player1.Mark);
-                }
-                else
-                {
-                    Tuple<int, int> move = player2.NextMove();
-                    UpdateButton(move.Item1, move.Item2, player2.Mark);
-                }
-
-                CheckForWinner();
+                    return false;
             }
         }
 
-        void UpdateButton(int row, int column, char mark)
+        public bool IsComputerPlayerMove()
         {
-            Control button = new Control();
-
-            if (row.Equals(0) && column.Equals(0))
-                button = this.Controls["a1Button"];
-            else if (row.Equals(0) && column.Equals(1))
-                button = this.Controls["a2Button"];
-            else if (row.Equals(0) && column.Equals(2))
-                button = this.Controls["a3Button"];
-            else if (row.Equals(1) && column.Equals(0))
-                button = this.Controls["b1Button"];
-            else if (row.Equals(1) && column.Equals(1))
-                button = this.Controls["b2Button"];
-            else if (row.Equals(1) && column.Equals(2))
-                button = this.Controls["b3Button"];
-            else if (row.Equals(2) && column.Equals(0))
-                button = this.Controls["c1Button"];
-            else if (row.Equals(2) && column.Equals(1))
-                button = this.Controls["c2Button"];
-            else if (row.Equals(2) && column.Equals(2))
-                button = this.Controls["c3Button"];
-
-            button.Text = mark.ToString();
-            button.Enabled = false;
-        }
-
-
-        void UpdateButtonColor(int row, int column, Color color)
-        {
-            Control button = new Control();
-
-            if (row.Equals(0) && column.Equals(0))
-                button = this.Controls["a1Button"];
-            else if (row.Equals(0) && column.Equals(1))
-                button = this.Controls["a2Button"];
-            else if (row.Equals(0) && column.Equals(2))
-                button = this.Controls["a3Button"];
-            else if (row.Equals(1) && column.Equals(0))
-                button = this.Controls["b1Button"];
-            else if (row.Equals(1) && column.Equals(1))
-                button = this.Controls["b2Button"];
-            else if (row.Equals(1) && column.Equals(2))
-                button = this.Controls["b3Button"];
-            else if (row.Equals(2) && column.Equals(0))
-                button = this.Controls["c1Button"];
-            else if (row.Equals(2) && column.Equals(1))
-                button = this.Controls["c2Button"];
-            else if (row.Equals(2) && column.Equals(2))
-                button = this.Controls["c3Button"];
-
-            button.BackColor = color;
-        }
-
-        Tuple<int,int> GetButtonBoardPosition(object button)
-        {
-            switch (((Control)button).Name)
-            {
-               case "a1Button":
-                    return new Tuple<int, int>(0, 0);
-                case "a2Button":
-                    return new Tuple<int, int>(0, 1);
-                case "a3Button":
-                    return new Tuple<int, int>(0, 2);
-                case "b1Button":
-                    return new Tuple<int, int>(1, 0);
-                case "b2Button":
-                    return new Tuple<int, int>(1, 1);
-                case "b3Button":
-                    return new Tuple<int, int>(1, 2);
-                case "c1Button":
-                    return new Tuple<int, int>(2, 0);
-                case "c2Button":
-                    return new Tuple<int, int>(2, 1);
-                case "c3Button":
-                    return new Tuple<int, int>(2, 2);
-                default:
-                    throw new Exception("Bad button!");
-            }
-        }
-
-        private bool IsComputerTurn()
-        {
-            if(gameBoard.IsPlayer1Turn())
+            if (gameBoard.IsPlayer1Turn())
             {
                 if (!player1.GetType().Equals(typeof(Human)))
                     return true;
+                else
+                    return false;
             }
             else
             {
                 if (!player2.GetType().Equals(typeof(Human)))
                     return true;
+                else
+                    return false;
             }
-            return false;
         }
 
-        private void CheckForWinner()
+        public void ComputerPlayerNextMove()
+        {
+            if (gameBoard.IsPlayer1Turn())
+            {
+                lastMove = player1.NextMove();
+            }
+            else
+            {
+                lastMove = player2.NextMove();
+            }
+            CheckWinner();
+        }
+
+        public void HumanPlayerNextMove(Tuple<int, int> move)
+        {
+            if (gameBoard.IsPlayer1Turn())
+            {
+                gameBoard.Move(move.Item1, move.Item2, player1.ID);
+                lastMove = move;
+            }
+            else
+            {
+                gameBoard.Move(move.Item1, move.Item2, player2.ID);
+                lastMove = move;
+            }
+            CheckWinner();
+        }
+
+        private void CheckWinner()
         {
             if (gameBoard.CheckWinner() != 0)
             {
-                ColorWinnerPosition();
                 gameOverStatus = true;
-                DisableButtons();
-                string winner = "";
                 if (gameBoard.IsPlayer1Turn())
-                    winner = player2.Mark.ToString();
+                {
+                    winnerID = player2.ID;
+                    winnerMark = player2.Mark.ToString();
+                }
                 else
-                    winner = player1.Mark.ToString();
-                MessageBox.Show(winner + " Wins!", "Game Over!");
+                {
+                    winnerID = player1.ID;
+                    winnerMark = player1.Mark.ToString();
+                }
+
+                SetWinnerPositions(gameBoard.GetWinnerPositions());
             }
-            else if (gameBoard.turnCount == 9)
+            else if (gameBoard.turnCount == gameBoard.rows * gameBoard.columns)
             {
                 gameOverStatus = true;
-                MessageBox.Show("Draw!", "Game Over!");
+                winnerID = 0;
+                winnerMark = "";
             }
         }
 
-        private void ColorWinnerPosition()
+        public Tuple<int, int> GetLastMove()
         {
-            winnerPositions = gameBoard.GetWinnerPositions();
-
-            for (int i = 0; i < winnerPositions.Count; i++)
-            {
-                UpdateButtonColor(winnerPositions[i].Item1, winnerPositions[i].Item2, Color.Lime);
-            }
+            return lastMove;
         }
 
-        private void ColorWinnerPositionReset()
+        public bool GetGameOverStatus()
         {
-            if (winnerPositions.Count != 0)
-            {
-                for (int i = 0; i < winnerPositions.Count; i++)
-                {
-                    UpdateButtonColor(winnerPositions[i].Item1, winnerPositions[i].Item2, Color.White);
-                }
-                winnerPositions = new List<Tuple<int, int>>();
-            }
+            return gameOverStatus;
         }
 
-        private void ResetButtons()
+        public int GetWinnerID()
         {
-            a1Button.Text = "";
-            a2Button.Text = "";
-            a3Button.Text = "";
-            b1Button.Text = "";
-            b2Button.Text = "";
-            b3Button.Text = "";
-            c1Button.Text = "";
-            c2Button.Text = "";
-            c3Button.Text = "";
-
-            ColorWinnerPositionReset();
+            return winnerID;
         }
 
-        private bool CheckButtonResetStatus()
+        public string GetWinnerMark()
         {
-            bool resetStatus = true;
-
-            try
-            {
-                foreach (Component c in Controls)
-                {
-                    Button button = (Button)c;
-                    button.Enabled = true;
-                    if (button.Text != "")
-                        resetStatus = false;
-                }
-            }
-            catch { }
-
-            return resetStatus;
+            return winnerMark;
         }
 
-        private void DisableButtons()
+        private void SetWinnerPositions(List<Tuple<int, int>> winnerPositions)
         {
-            try
-            {
-                foreach (Component c in Controls)
-                {
-                    Button button = (Button)c;
-                    button.Enabled = false;
-                }
-            }
-            catch { }
+            this.winnerPositions = winnerPositions;
+        }
+
+        public List<Tuple<int, int>> GetWinnerPositions()
+        {
+            return winnerPositions;
         }
     }
 }

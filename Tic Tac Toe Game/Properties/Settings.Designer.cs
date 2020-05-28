@@ -8,7 +8,7 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-namespace Tic_Tac_Toe.Properties
+namespace Tic_Tac_Toe_Game.Properties
 {
 
 

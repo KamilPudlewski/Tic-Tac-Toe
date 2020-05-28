@@ -24,13 +24,6 @@ namespace Tic_Tac_Toe
             this.Mark = Mark;
         }
 
-        public void Move()
-        {
-            List<Tuple<int, int>> availableMoves = GetAvailableMoves();
-            int move = random.Next(availableMoves.Count);
-            gameBoard.Move(availableMoves[move].Item1, availableMoves[move].Item2, Mark);
-        }
-
         public Tuple<int, int> NextMove()
         {
             List<Tuple<int, int>> availableMoves = GetAvailableMoves();
@@ -39,9 +32,9 @@ namespace Tic_Tac_Toe
             return availableMoves[move];
         }
 
-        public List<Tuple<int, int>> GetAvailableMoves()
+        private List<Tuple<int, int>> GetAvailableMoves()
         {
-            List<Tuple<int,int>> availableMoves = new List<Tuple<int, int>>();
+            List<Tuple<int, int>> availableMoves = new List<Tuple<int, int>>();
             for (int i = 0; i < gameBoard.board.GetLength(0); i++)
             {
                 for (int j = 0; j < gameBoard.board.GetLength(1); j++)

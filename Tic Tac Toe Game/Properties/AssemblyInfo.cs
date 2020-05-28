@@ -5,11 +5,11 @@ using System.Runtime.InteropServices;
 // Ogólne informacje o zestawie są kontrolowane poprzez następujący 
 // zestaw atrybutów. Zmień wartości tych atrybutów, aby zmodyfikować informacje
 // powiązane z zestawem.
-[assembly: AssemblyTitle("Tic Tac Toe")]
+[assembly: AssemblyTitle("Tic Tac Toe Game")]
 [assembly: AssemblyDescription("")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("")]
-[assembly: AssemblyProduct("Tic Tac Toe")]
+[assembly: AssemblyProduct("Tic Tac Toe Game")]
 [assembly: AssemblyCopyright("Copyright ©  2020")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
@@ -20,7 +20,7 @@ using System.Runtime.InteropServices;
 [assembly: ComVisible(false)]
 
 // Następujący identyfikator GUID jest identyfikatorem biblioteki typów w przypadku udostępnienia tego projektu w modelu COM
-[assembly: Guid("bacd2d70-56cb-4111-af17-8e8758dd98ce")]
+[assembly: Guid("95dc78f3-8bc4-4203-b673-0042eb8982e4")]
 
 // Informacje o wersji zestawu zawierają następujące cztery wartości:
 //
